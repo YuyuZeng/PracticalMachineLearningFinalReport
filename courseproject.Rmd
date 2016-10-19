@@ -2,7 +2,8 @@
 title: "Practical Machine Learning Course Project"
 author: "Yuyu Zeng"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
-output: html_document
+output: 
+    html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -16,6 +17,7 @@ library(caret)
 library(knitr)
 library(rpart)
 library(rpart.plot)
+library(markdown)
 library(randomForest)
 ```
 
