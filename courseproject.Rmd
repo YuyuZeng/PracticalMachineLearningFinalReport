@@ -1,0 +1,85 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Yuyu Zeng"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Synoposis
+In this project, we use the data from personal activity to quantify how well the participant do a particular activity. The "classe" is the variable that is going to be predicted. Firstly, we extract relevant predictors. Then, we implement two relevant models for the multi-class classification problem, i.e., the decision tree and random forest models to check which model perform better. Finally, we use the chosen model to predict 20 different test cases. It turns out that the random forest model perform better in terms of the accuracy, therefore we have enough reasons to implement the random forest model to predict the test cases.
+
+```{r}
+library(caret)
+library(knitr)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+```
+
+## Download and read the data sets
+This R code supports download training and testing datasets directly from the website. We read the data sets after having download them. 
+
+```{r, echo=TRUE}
+setwd("/Users/yuyu/Desktop/DataScientist/MachineLearning/PracticalMachineLearningDataScienceTrackCoursera/week4/FinalProject")
+trainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(trainURL, destfile = "./traindat")
+download.file(testURL, destfile="./testdat")
+traindat <- read.csv("traindat")
+testdat <- read.csv("testdat")
+```
+
+## Preprocessing data
+We split the "traindat" into training (75 percent) and testing (25 percent) data sets. We do the following procesured to pre-process the data. Firstly, we remove near zero-variance predictors; then, we remove predictors with more than 60 percent missing values; finally, we remove intuitively bad predictors (e.g., ID number, user names and recording times etc). Note that in the steps of splitting data, removing "near zero-variance", predictors with more than 80 percent missing values and intuitively bad predcitors, we check the dimensions of training and testing data sets after the corresponding steps are implemented. 
+```{r, echo=TRUE}
+# split the traindat into training and testing data sets
+inTrain <- createDataPartition(traindat$classe, p = 0.75, list=FALSE)
+mytraining <- traindat[inTrain,]
+mytesting <- traindat[-inTrain,]
+dim(mytraining); dim(mytesting)
+
+#remove "near zero-variance" predictors
+nzv <- nearZeroVar(mytraining, saveMetrics = TRUE)
+mytraining <- mytraining[,nzv$nzv==FALSE]
+mytesting <- mytesting[,nzv$nzv==FALSE]
+dim(mytraining); dim(mytesting)
+
+#remove predictors with more than 80 percent missing values
+mytraining <- mytraining[, -which(colMeans(is.na(mytraining)) > 0.8)]; mytesting <- mytesting[,names(mytraining)]; 
+dim(mytraining); dim(mytesting);
+
+#remove the predictors that are not intuitively relevant
+mytraining <- mytraining[, -c(1:5)];
+mytesting <- mytesting[,-c(1:5)]; 
+dim(mytraining); dim(mytesting);
+```
+From the above results, we can see that after removing some predictors, we end up with predictors 53 in the end (note that "classe" is the variable we are going to predict).
+
+## Prediction with Decision Trees
+As this is a multi-class classification problem, we can try to implement the decision tree model.
+```{r, echo = TRUE}
+set.seed(12345)
+dtm <- rpart(classe ~., data=mytraining, method = "class")
+rpart.plot(dtm, type = 4, extra = 101, main = "Decision Tree Model")
+#using the decision tree model to predict
+p <-predict(dtm,mytesting, type="class")
+confusionMatrix(p,mytesting$classe)
+```
+
+## Prediction with Random Forests
+We also try the random forests model to do the classification and check whether there are some improvements in the accuracy. 
+```{r, echo = TRUE}
+rfm <-randomForest(classe~., data=mytraining)
+p<-predict(rfm, mytesting, type="class")
+confusionMatrix(p,mytesting$classe)
+```
+Indeed, we see there is a big improvement in the accuracy compared with the decision tree model. As the accuracy for the testing data set is 0.9969, the out of sample error is (1-0.9969)=0.0031. Therefore, we are in favor of the random forest model over the decision tree model. 
+
+## Prediction for the test cases
+Now we use the random forest model to predict 20 different test cases. 
+```{r, echo = TRUE}
+predict(rfm, testdat, type = "class")
+```
