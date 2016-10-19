@@ -3,7 +3,8 @@ title: "Practical Machine Learning Course Project"
 author: "Yuyu Zeng"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output: 
-    html_document
+    html_document: 
+     keep_md: true
 ---
 
 ```{r setup, include=FALSE}
